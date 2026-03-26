@@ -9,6 +9,7 @@ import copy
 import json
 
 import torch
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 import verl.utils.torch_functional as verl_F
 from verl.utils.dataset.rl_dataset import RLHFDataset
@@ -30,7 +31,9 @@ class NemotronToolAwareRLHFDataset(RLHFDataset):
         return tools
 
     def _chat_template_with_tools(self, messages: list, tools: list[dict], tokenize: bool):
-        kwargs = copy.deepcopy(self.apply_chat_template_kwargs)
+        kwargs = copy.deepcopy(self.apply_chat_template_kwargs) or {}
+        if isinstance(kwargs, DictConfig | ListConfig):
+            kwargs = OmegaConf.to_container(kwargs, resolve=True)
         if tools and "tools" not in kwargs:
             kwargs["tools"] = tools
         return self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=tokenize, **kwargs)
